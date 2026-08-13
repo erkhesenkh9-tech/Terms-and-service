@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# The auth landing pages exist to hand a sign-in result back to the app.
+# They carry no content worth indexing and are useless without a live token.
+Disallow: /auth/
+
+Sitemap: https://thevezo.com/sitemap.xml

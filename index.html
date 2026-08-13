@@ -1,21 +1,665 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vezo — Legal</title>
-  <meta http-equiv="refresh" content="0; url=/terms.html" />
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 720px; margin: 48px auto; padding: 24px; line-height: 1.6; color: #111; }
-    a { color: #E4573D; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Vezo — See what's happening around you</title>
+<meta name="description" content="Vezo is a live map of what's happening across the San Francisco Bay Area. Find events near you, say you're going, create your own, and keep the memories. Free on iPhone." />
+<link rel="canonical" href="https://thevezo.com/" />
+<meta name="theme-color" content="#F5F1EB" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Vezo" />
+<meta property="og:url" content="https://thevezo.com/" />
+<meta property="og:title" content="Vezo — See what's happening around you" />
+<meta property="og:description" content="A live map of what's happening across the San Francisco Bay Area. Find events near you, say you're going, and keep the memories." />
+<meta property="og:image" content="https://thevezo.com/assets/img/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="The Vezo app showing a map of the San Francisco Bay Area covered in event pins." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Vezo — See what's happening around you" />
+<meta name="twitter:description" content="A live map of what's happening across the San Francisco Bay Area." />
+<meta name="twitter:image" content="https://thevezo.com/assets/img/og.png" />
+
+<link rel="icon" href="/assets/img/favicon-32.png" sizes="32x32" />
+<link rel="icon" href="/assets/img/favicon-16.png" sizes="16x16" />
+<link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png" />
+
+<link rel="preload" href="/assets/font/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/img/phone-map.webp" as="image" type="image/webp" />
+<link rel="stylesheet" href="/assets/css/site.css" />
+
+<script>
+  // FIRST THING ON THE PAGE, ON PURPOSE.
+  //
+  // Supabase redirects to the project's Site URL — this page — whenever the
+  // redirect it was handed is not on its allow-list. That is how a Google
+  // sign-in ends up on the marketing site: the OAuth result lands here, and a
+  // page that simply renders (or forwards to another page) throws the result
+  // away and leaves the member signed out.
+  //
+  // So before anything else: if this page was opened carrying a sign-in
+  // result, hand it straight back to the app over its own scheme. Inside the
+  // in-app browser that started the flow, opening vezo:// is also what closes
+  // the sheet and wakes the app up, which is what finishes the sign-in.
+  //
+  // Kept inline rather than in site.js: a script that 404s or loads late would
+  // take sign-in down with it, and this page is the last line of defence.
+  //
+  // Nothing here inspects, stores or logs the result — it is forwarded
+  // verbatim. PKCE puts a ?code= in the query, implicit puts #access_token= in
+  // the hash, and errors arrive as ?error=. All three travel as a query
+  // because a fragment can be dropped when a custom scheme is opened from a
+  // browser; the app reads both.
+  //
+  // This block only DETECTS and marks. The actual jump to vezo:// happens in
+  // the script directly under the handoff card in the body, because navigating
+  // to an external scheme stops the HTML parser where it stands: doing it from
+  // here leaves the document with no <body> at all, so anyone who lands on this
+  // URL without the app installed gets a blank page instead of the fallback
+  // button. Marking here and jumping there costs a few milliseconds and keeps
+  // the card guaranteed present.
+  window.__vezoAuthTarget = (function () {
+    var query = window.location.search.replace(/^\?/, '');
+    var hash = window.location.hash.replace(/^#/, '');
+    var payload = query + (query && hash ? '&' : '') + hash;
+    if (!payload) return null;
+
+    // Only a real sign-in result is forwarded. A plain visit with some
+    // unrelated query string (a campaign tag, say) still gets the website.
+    if (!/(^|&)(code|access_token|token_hash|error|error_code)=/.test('&' + payload)) {
+      return null;
+    }
+
+    document.documentElement.setAttribute('data-auth', '1');
+    return 'vezo://auth/callback?' + payload;
+  })();
+</script>
+
+<style>
+  /* Only ever applied when the block above detected a sign-in result, so the
+     marketing page never flashes in front of someone mid sign-in. */
+  html[data-auth] #page { display: none; }
+  html:not([data-auth]) #signin { display: none; }
+
+  #signin {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  #signin .card {
+    max-width: 420px;
+    width: 100%;
+    background: #fff;
+    border: 1px solid rgba(14, 13, 11, 0.08);
+    border-radius: 20px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+
+  #signin .spinner {
+    width: 34px;
+    height: 34px;
+    margin: 0 auto 22px;
+    border: 3px solid rgba(17, 17, 17, 0.12);
+    border-top-color: #E4573D;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #signin .spinner { animation-duration: 3s; } }
+
+  /* Not an <h1>: this interstitial replaces the page for a second or two on
+     its way back to the app, and the document already has its real heading. */
+  #signin .signin-title {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #0E0D0B;
+    margin: 0 0 10px;
+  }
+
+  #signin p { color: #55524C; margin: 0; }
+  #signin .hidden { display: none; }
+
+  #signin .button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 13px 26px;
+    background: #0E0D0B;
+    color: #fff;
+    border-radius: 999px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  #signin .hint { margin-top: 16px; font-size: 14px; color: #8B867E; }
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MobileApplication",
+  "name": "Vezo",
+  "applicationCategory": "SocialNetworkingApplication",
+  "operatingSystem": "iOS 15.1 or later",
+  "description": "A live map of what's happening across the San Francisco Bay Area. Find events near you, say you're going, create your own, and keep the memories.",
+  "url": "https://thevezo.com/",
+  "installUrl": "https://apps.apple.com/us/app/vezoo/id6790893049",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "areaServed": { "@type": "Place", "name": "San Francisco Bay Area, California" }
+}
+</script>
 </head>
+
 <body>
-  <p>Redirecting to <a href="/terms.html">Terms of Service</a>…</p>
-  <ul>
-    <li><a href="/terms.html">Terms of Service</a></li>
-    <li><a href="/privacy.html">Privacy Policy</a></li>
-    <li><a href="/guidelines.html">Community Guidelines</a></li>
+
+<!-- Sign-in handoff. Hidden unless the head script found an auth result. -->
+<div id="signin">
+  <main class="card" role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <p class="signin-title">Signing you in…</p>
+    <p class="signin-msg">Returning you to Vezo. This only takes a moment.</p>
+    <a class="button hidden" id="open" href="vezo://auth/callback">Open Vezo</a>
+    <p class="hint hidden" id="hint">If nothing happens, make sure Vezo is installed and tap the button above.</p>
+  </main>
+</div>
+
+<script>
+  // Runs the moment the handoff card above exists, and before the rest of the
+  // page is parsed. Order inside matters: the button and the timer are set up
+  // FIRST, because the navigation on the last line can stop the parser dead —
+  // anything registered after it might never run.
+  (function () {
+    var target = window.__vezoAuthTarget;
+    if (!target) return;
+
+    document.getElementById('open').setAttribute('href', target);
+
+    // The handoff should have taken over by now. Still here means it did not —
+    // stop pretending it is working and offer the manual route.
+    setTimeout(function () {
+      var spinner = document.querySelector('#signin .spinner');
+      if (spinner) spinner.classList.add('hidden');
+      document.querySelector('#signin .signin-title').textContent = 'Almost there';
+      document.querySelector('#signin .signin-msg').textContent = 'Tap below to finish signing in to Vezo.';
+      document.getElementById('open').classList.remove('hidden');
+      document.getElementById('hint').classList.remove('hidden');
+    }, 2500);
+
+    window.location.replace(target);
+  })();
+</script>
+
+<div id="page">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============================ Navigation ============================ -->
+<header class="site-nav" data-nav>
+  <nav class="wrap site-nav__inner" aria-label="Primary">
+    <a class="brand" href="/">
+      <img src="/assets/img/icon-96.webp" width="96" height="96" alt="" />
+      <span>VEZO</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#discover">Discover</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#safety">Safety</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <a class="btn btn--primary btn--sm" href="https://apps.apple.com/us/app/vezoo/id6790893049">Get Vezo</a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="nav-panel" aria-label="Menu">
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <ul class="nav-panel" id="nav-panel" data-nav-panel>
+    <li><a href="#discover">Discover</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#safety">Safety</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a class="btn btn--primary" href="https://apps.apple.com/us/app/vezoo/id6790893049">Get Vezo</a></li>
   </ul>
+</header>
+
+<main id="main">
+
+<!-- ============================ 1. Hero =============================== -->
+<section class="hero wrap">
+  <h1 class="hero__title" data-reveal>See what's happening around you.</h1>
+
+  <p class="lead hero__lead" data-reveal style="--d: 0.08s">
+    Vezo is a live map of what's on across the San Francisco Bay Area.
+    Open it and you see the city, not a list.
+  </p>
+
+  <div class="hero__actions" data-reveal style="--d: 0.16s">
+    <a class="btn btn--primary" href="https://apps.apple.com/us/app/vezoo/id6790893049">Get Vezo</a>
+    <a class="btn btn--ghost" href="#discover">Explore</a>
+  </div>
+
+  <p class="hero__note" data-reveal style="--d: 0.22s">Free on iPhone · Bay Area beta</p>
+
+  <div class="hero__stage">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <img
+      class="hero__phone"
+      data-parallax
+      src="/assets/img/phone-map.webp"
+      width="720" height="1506"
+      fetchpriority="high"
+      decoding="async"
+      alt="The Vezo map of the San Francisco Bay Area, covered in circular event pins around San Francisco and Oakland, with filters for Now, Today and Weekend." />
+  </div>
+</section>
+
+<!-- ==================== 2. The city, visualized ======================= -->
+<section class="section section--tight" id="discover">
+  <div class="wrap">
+    <header style="max-width: 44ch; margin-bottom: clamp(32px, 4vw, 52px)">
+      <p class="eyebrow" data-reveal>The map</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">See your city differently.</h2>
+      <p class="lead lead--wide" data-reveal style="--d: 0.12s">
+        Events live where they happen. Pan across the Bay and the map fills in
+        around you — each pin an event you can open, read, and say you're going to.
+      </p>
+    </header>
+
+    <div class="mapscene" data-reveal>
+      <div class="mapscene__grid" aria-hidden="true"></div>
+
+      <div class="mapscene__inner">
+        <span class="pin pin--a" data-pin style="--d: 0.10s" aria-hidden="true"><i class="pin__dot"></i>Music</span>
+        <span class="pin pin--b" data-pin style="--d: 0.22s" aria-hidden="true"><i class="pin__dot"></i>Food</span>
+        <span class="pin pin--c" data-pin style="--d: 0.34s" aria-hidden="true"><i class="pin__dot"></i>Community</span>
+        <span class="pin pin--d" data-pin style="--d: 0.46s" aria-hidden="true"><i class="pin__dot"></i>Art</span>
+        <span class="pin pin--e" data-pin style="--d: 0.58s" aria-hidden="true"><i class="pin__dot"></i>Sports</span>
+        <span class="pin pin--f" data-pin style="--d: 0.70s" aria-hidden="true"><i class="pin__dot"></i>Market</span>
+
+        <img
+          class="phone phone--lg"
+          src="/assets/img/phone-map.webp"
+          width="720" height="1506"
+          loading="lazy" decoding="async"
+          alt="Vezo's map view filtered to public events, showing dozens of event pins clustered across San Francisco and the East Bay." />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 3. Find something to do ======================= -->
+<section class="section section--warm" id="features">
+  <div class="wrap split">
+    <div class="split__body">
+      <p class="eyebrow" data-reveal>Discovery</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">Find something to do.</h2>
+      <p class="lead" data-reveal style="--d: 0.12s">
+        Filter by what you're in the mood for, or by when you're free —
+        what's on now, today, or this weekend. Switch between everything
+        happening publicly and just what your friends are going to.
+      </p>
+
+      <ul class="chips" data-reveal style="--d: 0.18s" aria-label="Event categories in Vezo">
+        <li class="chip">Community</li>
+        <li class="chip">Food</li>
+        <li class="chip">Art</li>
+        <li class="chip">Music</li>
+        <li class="chip">Party</li>
+        <li class="chip">Sports</li>
+        <li class="chip">Volunteer</li>
+        <li class="chip">Networking</li>
+        <li class="chip">Family</li>
+        <li class="chip">Market</li>
+        <li class="chip">Education</li>
+      </ul>
+    </div>
+
+    <div class="split__media device-stage" data-reveal style="--d: 0.1s">
+      <img
+        class="phone"
+        src="/assets/img/phone-discover.webp"
+        width="720" height="1567"
+        loading="lazy" decoding="async"
+        alt="Vezo's Discover screen, listing featured and popular events with filters for Today, This week and All upcoming." />
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 4. Discovery to experience ==================== -->
+<section class="section">
+  <div class="wrap loop">
+    <div class="loop__sticky">
+      <p class="eyebrow" data-reveal>How it works</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">From a pin to a night out.</h2>
+      <div class="device-stage" data-reveal style="--d: 0.12s; margin-top: clamp(28px, 4vw, 44px)">
+        <img
+          class="phone"
+          src="/assets/img/phone-home.webp"
+          width="720" height="1542"
+          loading="lazy" decoding="async"
+          alt="Vezo's home screen headed Now in Bay Area, with category shortcuts and a list of upcoming events." />
+      </div>
+    </div>
+
+    <ol class="loop__steps">
+      <li class="loop__step" data-step data-reveal>
+        <h3>Discover</h3>
+        <p>Open the map and see what's on near you, right now or later this week.</p>
+      </li>
+      <li class="loop__step" data-step data-reveal>
+        <h3>Join</h3>
+        <p>Tap that you're going. It takes one tap and no account — make one when you want friends, posts or events of your own.</p>
+      </li>
+      <li class="loop__step" data-step data-reveal>
+        <h3>Experience</h3>
+        <p>Show up. Every event has a chat room for the people going, so you're not arriving cold.</p>
+      </li>
+      <li class="loop__step" data-step data-reveal>
+        <h3>Remember</h3>
+        <p>Post a photo or a clip from the night, and keep the events you went to saved to your profile.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ==================== 5. Create events ============================== -->
+<section class="section section--warm">
+  <div class="wrap split split--reverse">
+    <div class="split__body">
+      <p class="eyebrow" data-reveal>Create</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">Have something happening? Put it on the map.</h2>
+      <p class="lead" data-reveal style="--d: 0.12s">
+        Name it, drop a pin, pick a time. Make it public for the whole Bay Area,
+        or invite-only for the people you choose. Every event comes with a guest
+        list, co-hosts and a chat room for everyone going.
+      </p>
+      <p class="disclaimer" data-reveal style="--d: 0.18s">
+        Events are posted by people in the community. Vezo doesn't verify or
+        endorse them — check the details with the organiser before you go.
+      </p>
+    </div>
+
+    <div class="split__media device-stage" data-reveal style="--d: 0.1s">
+      <img
+        class="phone"
+        src="/assets/img/phone-create.webp"
+        width="720" height="1533"
+        loading="lazy" decoding="async"
+        alt="Vezo's create-an-event form, step one of three, with fields for the event name, location, day and time." />
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 6. People and community ======================= -->
+<section class="section">
+  <div class="wrap split">
+    <div class="split__body">
+      <p class="eyebrow" data-reveal>Community</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">The event is the point. The people come with it.</h2>
+      <p class="lead" data-reveal style="--d: 0.12s">
+        Add friends, start a group chat, and plan the weekend in one thread.
+        Post from an event while it's happening, and send anything worth seeing
+        straight to a friend.
+      </p>
+    </div>
+
+    <div class="split__media device-stage" data-reveal style="--d: 0.1s">
+      <img
+        class="phone"
+        src="/assets/img/phone-social.webp"
+        width="720" height="1563"
+        loading="lazy" decoding="async"
+        alt="Vezo's Social screen showing friends, requests and groups above a list of message threads." />
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 7. Memories =================================== -->
+<section class="section section--warm section--tight">
+  <div class="wrap split">
+    <div class="split__body">
+      <p class="eyebrow" data-reveal>Memories</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">Events leave the map. The night doesn't have to.</h2>
+      <p class="lead" data-reveal style="--d: 0.12s">
+        When an event is over it comes off the map — but the photos and clips
+        from it stay with you, saved privately to the events you went to.
+      </p>
+    </div>
+
+    <div class="memory" data-memory aria-hidden="true">
+      <article class="memory__card memory__card--live">
+        <p class="memory__label">Happening now</p>
+        <p class="memory__title">Friday on the roof</p>
+        <p class="memory__meta">Mission District · 8:00 PM</p>
+      </article>
+      <article class="memory__card memory__card--saved">
+        <p class="memory__label">Saved memory</p>
+        <p class="memory__title">Friday on the roof</p>
+        <p class="memory__meta">You went · 4 photos</p>
+        <div class="memory__swatch"></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 8. Trust and safety =========================== -->
+<section class="section section--dark" id="safety">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>Trust &amp; safety</p>
+    <h2 class="h2" data-reveal style="--d: 0.06s">Real events, real people.</h2>
+    <p class="lead lead--wide" data-reveal style="--d: 0.12s">
+      Vezo sends people to places in the real world, so what gets onto the map
+      matters. Here is what we actually do about it.
+    </p>
+
+    <ul class="grid grid--quad">
+      <li class="feature" data-reveal>
+        <h3>Photos are reviewed</h3>
+        <p>Every uploaded photo is checked before it can appear anywhere in the app.</p>
+      </li>
+      <li class="feature" data-reveal style="--d: 0.08s">
+        <h3>Report and block</h3>
+        <p>Events, posts and comments can be reported in two taps, and anyone can be blocked from contacting you.</p>
+      </li>
+      <li class="feature" data-reveal style="--d: 0.16s">
+        <h3>Rules that are enforced</h3>
+        <p>Fake events, spam, scams, harassment and unsafe content aren't allowed. Accounts that break the rules are suspended.</p>
+      </li>
+      <li class="feature" data-reveal style="--d: 0.24s">
+        <h3>Events can't vanish</h3>
+        <p>An event with people attending can't be quietly deleted out from under them.</p>
+      </li>
+    </ul>
+
+    <p class="lead lead--wide" data-reveal style="--d: 0.1s; margin-top: clamp(40px, 5vw, 56px)">
+      Some listings are imported from third parties, including Ticketmaster,
+      SeatGeek and Funcheap SF. Vezo can't guarantee the safety, legitimacy or
+      accuracy of every event — check the details with the organiser, use your
+      judgement, and report anything that looks wrong.
+    </p>
+
+    <p data-reveal style="--d: 0.16s; margin-top: 28px">
+      <a class="btn btn--onDark" href="/guidelines">Read the community guidelines</a>
+    </p>
+  </div>
+</section>
+
+<!-- ==================== 9. Privacy ==================================== -->
+<section class="section">
+  <div class="wrap split">
+    <div class="split__body">
+      <p class="eyebrow" data-reveal>Privacy</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">Location when you need it. Not when you don't.</h2>
+      <p class="lead" data-reveal style="--d: 0.12s">
+        Vezo doesn't collect continuous location, and there's no background
+        tracking. The optional "locate me" on the map stays on your device.
+      </p>
+    </div>
+
+    <ul class="grid" style="margin-top: 0">
+      <li class="feature" data-reveal style="--d: 0.06s">
+        <h3>Sharing is opt-in</h3>
+        <p>Sharing your location at an event is off until you turn it on, limited to the audience you pick, and expires within two minutes unless you refresh it. It stops on its own when the event ends.</p>
+      </li>
+      <li class="feature" data-reveal style="--d: 0.14s">
+        <h3>Less about you</h3>
+        <p>No legal name, home address, phone number, gender or contacts. We don't sell personal information.</p>
+      </li>
+      <li class="feature" data-reveal style="--d: 0.22s">
+        <h3>Leave whenever</h3>
+        <p>Delete your account any time from Settings, with email verification.</p>
+      </li>
+      <li class="feature" data-reveal style="--d: 0.30s">
+        <h3>Read the detail</h3>
+        <p><a href="/privacy">The privacy policy</a> is short, and it is the authority on all of this.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== 10. FAQ ======================================= -->
+<section class="section section--warm" id="faq">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>FAQ</p>
+    <h2 class="h2" data-reveal style="--d: 0.06s">Questions.</h2>
+
+    <div class="faq" data-reveal style="--d: 0.12s">
+      <details class="faq__item">
+        <summary class="faq__q">What is Vezo?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>A map-first app for finding events near you. Instead of scrolling a directory, you see what's happening around you on a map, open anything that looks good, and say you're going.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">Where can I use it?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>Vezo covers San Francisco, Oakland, Berkeley and the rest of the Bay Area. It's currently a Bay Area beta, so features may change.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">Do I need an account?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>Not to look around, and not to say you're going — that takes one tap and no sign-up. You'll need an account for friends, posting, and creating events of your own.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">Can I create an event?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>Yes. Name it, drop a pin and pick a time. You choose whether it's public for the whole Bay Area or invite-only, and it comes with a guest list, co-hosts and a chat room.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">Does Vezo track my location?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>No. Vezo doesn't collect continuous location and doesn't track you in the background. The optional "locate me" on the map stays on your device.</p>
+          <p>Sharing your location at an event is a separate, opt-in choice: it's off until you turn it on, limited to the audience you pick, and expires within two minutes unless you refresh it.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">Where do the listings come from?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>Two places: events created by people in the community, and listings imported from third-party sources including Ticketmaster, SeatGeek and Funcheap SF. Imported events carry their source. Verify details with the organiser before you go.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">How old do I need to be?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>You must be at least 13 to use Vezo. See the <a href="/terms">Terms of Service</a>.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">What is Vezo Pro?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>An optional subscription — $2.99 per month or $19.99 per year, starting with a 7-day free trial. It adds event themes, smart alerts for the categories you follow, a boosted map pin, organiser analytics, a higher event-creation limit, and profile themes. Everything else in Vezo is free.</p>
+        </div>
+      </details>
+
+      <details class="faq__item">
+        <summary class="faq__q">Where are the community rules?<i class="faq__sign" aria-hidden="true"></i></summary>
+        <div class="faq__a">
+          <p>In the <a href="/guidelines">Community Guidelines</a>. They cover what's allowed on the map, how reporting works, and what happens when someone breaks the rules.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 11. Final CTA ================================= -->
+<section class="section cta">
+  <div class="wrap">
+    <h2 class="cta__title" data-reveal>Your city<br />is happening.</h2>
+    <a class="btn btn--light" href="https://apps.apple.com/us/app/vezoo/id6790893049" data-reveal style="--d: 0.1s">Get Vezo</a>
+    <p class="cta__note" data-reveal style="--d: 0.16s">Free on iPhone · San Francisco Bay Area</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================== Footer ============================== -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="site-footer__top">
+      <div>
+        <a class="brand" href="/">
+          <img src="/assets/img/icon-96.webp" width="96" height="96" alt="" />
+          <span>VEZO</span>
+        </a>
+        <p class="site-footer__blurb">
+          A live map of what's happening across the San Francisco Bay Area.
+          Currently in beta.
+        </p>
+      </div>
+
+      <div class="footer-nav">
+        <div>
+          <h3>Vezo</h3>
+          <ul>
+            <li><a href="https://apps.apple.com/us/app/vezoo/id6790893049">Get the app</a></li>
+            <li><a href="#discover">Discover</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="/support">Support</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Legal</h3>
+          <ul>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/guidelines">Community Guidelines</a></li>
+            <li><a href="mailto:erkhesenkh9@gmail.com">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <p>© 2026 Vezo</p>
+      <p>San Francisco Bay Area</p>
+    </div>
+  </div>
+</footer>
+
+</div><!-- /#page -->
+
+<script src="/assets/js/site.js" defer></script>
+
 </body>
 </html>
