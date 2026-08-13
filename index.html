@@ -236,31 +236,42 @@
 <main id="main">
 
 <!-- ============================ 1. Hero =============================== -->
-<section class="hero wrap">
-  <h1 class="hero__title" data-reveal>See what's happening around you.</h1>
-
-  <p class="lead hero__lead" data-reveal style="--d: 0.08s">
-    Vezo is a live map of what's on across the San Francisco Bay Area.
-    Open it and you see the city, not a list.
-  </p>
-
-  <div class="hero__actions" data-reveal style="--d: 0.16s">
-    <a class="btn btn--primary" href="https://apps.apple.com/us/app/vezoo/id6790893049">Get Vezo</a>
-    <a class="btn btn--ghost" href="#discover">Explore</a>
+<section class="hero">
+  <!-- Moving light in the logo's own colours. Decorative only. -->
+  <div class="aurora" aria-hidden="true">
+    <span class="aurora__orb aurora__orb--1"></span>
+    <span class="aurora__orb aurora__orb--2"></span>
+    <span class="aurora__orb aurora__orb--3"></span>
+    <span class="aurora__orb aurora__orb--4"></span>
+    <span class="aurora__orb aurora__orb--5"></span>
+    <span class="aurora__grain"></span>
   </div>
 
-  <p class="hero__note" data-reveal style="--d: 0.22s">Free on iPhone · Bay Area beta</p>
+  <div class="wrap hero__inner">
+    <h1 class="hero__title" data-reveal>See what's happening around you.</h1>
 
-  <div class="hero__stage">
-    <div class="hero__glow" aria-hidden="true"></div>
-    <img
-      class="hero__phone"
-      data-parallax
-      src="/assets/img/phone-map.webp"
-      width="720" height="1506"
-      fetchpriority="high"
-      decoding="async"
-      alt="The Vezo map of the San Francisco Bay Area, covered in circular event pins around San Francisco and Oakland, with filters for Now, Today and Weekend." />
+    <p class="lead hero__lead" data-reveal style="--d: 0.08s">
+      Vezo is a live map of what's on across the San Francisco Bay Area.
+      Open it and you see the city, not a list.
+    </p>
+
+    <div class="hero__actions" data-reveal style="--d: 0.16s">
+      <a class="btn btn--primary" href="https://apps.apple.com/us/app/vezoo/id6790893049">Get Vezo</a>
+      <a class="btn btn--ghost" href="#discover">Explore</a>
+    </div>
+
+    <p class="hero__note" data-reveal style="--d: 0.22s">Free on iPhone · Bay Area beta</p>
+
+    <div class="hero__stage">
+      <img
+        class="hero__phone"
+        data-parallax
+        src="/assets/img/phone-map.webp"
+        width="720" height="1506"
+        fetchpriority="high"
+        decoding="async"
+        alt="The Vezo map of the San Francisco Bay Area, covered in circular event pins around San Francisco and Oakland, with filters for Now, Today and Weekend." />
+    </div>
   </div>
 </section>
 
@@ -332,6 +343,59 @@
         width="720" height="1567"
         loading="lazy" decoding="async"
         alt="Vezo's Discover screen, listing featured and popular events with filters for Today, This week and All upcoming." />
+    </div>
+  </div>
+</section>
+
+<!-- ==================== Day or night ================================== -->
+<section class="section section--dark section--tight">
+  <div class="wrap">
+    <header class="center-head">
+      <p class="eyebrow" data-reveal>Day or night</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">The map keeps up with the night.</h2>
+      <p class="lead lead--wide" data-reveal style="--d: 0.12s">
+        One tap swaps the map between light and dark. Same city, same pins —
+        easier on the eyes when the good stuff is starting.
+      </p>
+    </header>
+
+    <div class="duo" data-reveal style="--d: 0.16s">
+      <img
+        class="phone"
+        src="/assets/img/phone-map.webp"
+        width="720" height="1506"
+        loading="lazy" decoding="async"
+        alt="Vezo's map in light mode, showing event pins across San Francisco and the East Bay in daylight." />
+      <img
+        class="phone"
+        src="/assets/img/phone-map-dark.webp"
+        width="720" height="1517"
+        loading="lazy" decoding="async"
+        alt="The same Vezo map in dark mode, stretching from Napa down to Santa Cruz with event pins glowing across the Bay." />
+    </div>
+  </div>
+</section>
+
+<!-- ==================== The event page ================================ -->
+<section class="section">
+  <div class="wrap split split--reverse">
+    <div class="split__body">
+      <p class="eyebrow" data-reveal>The event page</p>
+      <h2 class="h2" data-reveal style="--d: 0.06s">Everything about the night, in one place.</h2>
+      <p class="lead" data-reveal style="--d: 0.12s">
+        When, where, who's hosting and how many people are expected. Say you're
+        going in a tap, or save it for later. The event chat opens as the day
+        gets close, so you're not turning up cold.
+      </p>
+    </div>
+
+    <div class="split__media device-stage" data-reveal style="--d: 0.1s">
+      <img
+        class="phone"
+        src="/assets/img/phone-event.webp"
+        width="720" height="1517"
+        loading="lazy" decoding="async"
+        alt="A Vezo event page showing the start time, date, address, how many people are expected, an I'm going button, and the event chat." />
     </div>
   </div>
 </section>

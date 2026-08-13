@@ -329,10 +329,107 @@ ul, ol { margin: 0; padding: 0; }
 /* --- Hero ----------------------------------------------------------------- */
 .hero {
   position: relative;
-  padding-top: clamp(48px, 8vw, 92px);
   padding-bottom: 0;
   text-align: center;
   isolation: isolate;
+  /* Full-bleed so the aurora can run edge to edge; the inner .wrap keeps the
+     content on the same measure as every other section. */
+  overflow: hidden;
+}
+
+.hero__inner { padding-top: clamp(48px, 8vw, 92px); }
+
+/* --- Aurora ---------------------------------------------------------------
+   The hero's moving light. Five soft orbs in the logo gradient's own colours,
+   each drifting on its own clock so the field never visibly loops. Only
+   `transform` animates — the blur is rasterised once per layer and then just
+   moved, which is what keeps this off the main thread. `multiply` lets the
+   orbs deepen where they cross instead of washing out, the way the app icon
+   does. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  /* Dissolve into the page rather than ending on a hard edge. Held opaque to
+     76% so there is still light behind the device before it falls away. */
+  mask-image: linear-gradient(to bottom, #000 76%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 76%, transparent 100%);
+}
+
+.aurora__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(58px);
+  mix-blend-mode: multiply;
+  opacity: 0.72;
+  will-change: transform;
+}
+
+/* Each orb holds its colour across the middle third before falling off, so
+   the field reads as the logo gradient rather than a pale wash. */
+.aurora__orb--1,
+.aurora__orb--2,
+.aurora__orb--3,
+.aurora__orb--4,
+.aurora__orb--5 { background-repeat: no-repeat; }
+
+.aurora__orb--1 {
+  width: 46vw; height: 46vw; min-width: 380px; min-height: 380px;
+  top: -12%; left: -6%;
+  background: radial-gradient(circle at 50% 50%, var(--g1) 0%, var(--g1) 30%, transparent 72%);
+  animation: drift1 26s var(--ease) infinite alternate;
+}
+
+.aurora__orb--2 {
+  width: 40vw; height: 40vw; min-width: 340px; min-height: 340px;
+  top: -6%; right: -8%;
+  background: radial-gradient(circle at 50% 50%, var(--g4) 0%, var(--g4) 28%, transparent 72%);
+  animation: drift2 31s var(--ease) infinite alternate;
+}
+
+.aurora__orb--3 {
+  width: 52vw; height: 52vw; min-width: 420px; min-height: 420px;
+  top: 26%; left: 22%;
+  background: radial-gradient(circle at 50% 50%, var(--g3) 0%, var(--g3) 26%, transparent 70%);
+  animation: drift3 24s var(--ease) infinite alternate;
+}
+
+.aurora__orb--4 {
+  width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
+  bottom: 4%; left: 4%;
+  background: radial-gradient(circle at 50% 50%, var(--g2) 0%, var(--g2) 30%, transparent 72%);
+  animation: drift4 34s var(--ease) infinite alternate;
+}
+
+.aurora__orb--5 {
+  width: 38vw; height: 38vw; min-width: 320px; min-height: 320px;
+  bottom: -6%; right: 6%;
+  background: radial-gradient(circle at 50% 50%, var(--g5) 0%, var(--g5) 26%, transparent 72%);
+  animation: drift5 29s var(--ease) infinite alternate;
+}
+
+@keyframes drift1 { from { transform: translate3d(0, 0, 0) scale(1); }
+                    to   { transform: translate3d(9vw, 5vh, 0) scale(1.18); } }
+@keyframes drift2 { from { transform: translate3d(0, 0, 0) scale(1.1); }
+                    to   { transform: translate3d(-8vw, 7vh, 0) scale(0.92); } }
+@keyframes drift3 { from { transform: translate3d(0, 0, 0) scale(0.95); }
+                    to   { transform: translate3d(-6vw, -6vh, 0) scale(1.15); } }
+@keyframes drift4 { from { transform: translate3d(0, 0, 0) scale(1.05); }
+                    to   { transform: translate3d(7vw, -8vh, 0) scale(0.9); } }
+@keyframes drift5 { from { transform: translate3d(0, 0, 0) scale(1); }
+                    to   { transform: translate3d(-5vw, -4vh, 0) scale(1.2); } }
+
+/* Film grain. Large blurred gradients band badly on wide gamut displays;
+   a little noise on top hides the steps. Static — it never animates. */
+.aurora__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
 .hero__title {
@@ -357,7 +454,11 @@ ul, ol { margin: 0; padding: 0; }
   margin-top: clamp(30px, 4vw, 42px);
 }
 
-.hero__note { margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+/* Darker than the usual muted grey. This line lands on the busiest, most
+   saturated part of the aurora: measured against the lavender behind it,
+   --ink-2 gives 3.9:1 and --ink-3 far less, both under the 4.5:1 that 14px
+   text needs. This value measures 5.2:1 there. */
+.hero__note { margin-top: 18px; font-size: 14px; color: #403D38; }
 
 /* The device sits in a stage that owns the gradient light behind it. */
 .hero__stage {
@@ -369,29 +470,6 @@ ul, ol { margin: 0; padding: 0; }
      follows is what cuts it off, which is why .hero has no bottom padding. */
   height: clamp(400px, 52vw, 640px);
   overflow: hidden;
-}
-
-.hero__glow {
-  position: absolute;
-  left: 50%;
-  top: 4%;
-  /* Capped to the stage rather than the viewport. `.hero__stage` clips it
-     either way, but a box wider than the viewport still inflates
-     documentElement.scrollWidth, which reads as phantom overflow. */
-  width: min(920px, 100%);
-  aspect-ratio: 1 / 1;
-  transform: translateX(-50%);
-  background: var(--gradient);
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.42;
-  z-index: -1;
-  animation: drift 22s ease-in-out infinite alternate;
-}
-
-@keyframes drift {
-  from { transform: translateX(-50%) translateY(0) scale(1); }
-  to { transform: translateX(-50%) translateY(-3%) scale(1.07); }
 }
 
 .hero__phone {
@@ -512,6 +590,33 @@ ul, ol { margin: 0; padding: 0; }
 .pin--d { right: 2%; top: 38%; --c: var(--g5); }
 .pin--e { left: 8%; top: 74%; --c: var(--g3); }
 .pin--f { right: 9%; top: 68%; --c: var(--g1); }
+
+/* --- Centred section header ----------------------------------------------- */
+.center-head {
+  max-width: 44ch;
+  margin: 0 auto clamp(40px, 5vw, 64px);
+  text-align: center;
+}
+
+.center-head .lead { margin-inline: auto; }
+
+/* --- Two devices side by side --------------------------------------------
+   Used to show one screen in both themes at once; the slight opposing tilt
+   stops it reading as a spec sheet. */
+.duo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 40px);
+}
+
+.duo .phone {
+  width: clamp(150px, 21vw, 274px);
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
+}
+
+.duo .phone:first-child { transform: rotate(-3.5deg) translateY(-2%); }
+.duo .phone:last-child { transform: rotate(3.5deg) translateY(2%); }
 
 /* --- Split layout (sections 3, 5, 6) -------------------------------------- */
 .split {
@@ -913,6 +1018,15 @@ ul, ol { margin: 0; padding: 0; }
 
   .hero__stage { height: clamp(340px, 84vw, 460px); }
   .hero__phone { width: min(255px, 62vw); }
+
+  /* Five blurred layers is more compositing than a phone needs for an effect
+     this diffuse. Three, blurred less, is visually the same here. */
+  .aurora__orb { filter: blur(42px); opacity: 0.55; }
+  .aurora__orb--3,
+  .aurora__orb--5 { display: none; }
+  .aurora__grain { opacity: 0.22; }
+
+  .duo .phone { filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.5)); }
   .mapscene { padding-inline: 16px; border-radius: var(--r-lg); }
   .mapscene__inner { min-height: 400px; }
   /* Six floating pins is noise at this width — keep the four that frame the
