@@ -38,7 +38,10 @@
   --bg-warm: #EDE4DB;
   --surface: #FFFFFF;
   --ink: #0E0D0B;
-  --ink-2: #55524C;
+  /* Body copy. Darkened from #55524C, which measured 6.9:1 on --bg — over the
+     4.5:1 AA needs but just under the 7:1 for AAA. This clears 7.3:1, so every
+     paragraph on the site is AAA rather than most of them. */
+  --ink-2: #504D47;
   --ink-3: #8B867E;
   --line: rgba(14, 13, 11, 0.10);
   --line-soft: rgba(14, 13, 11, 0.06);
@@ -352,10 +355,17 @@ ul, ol { margin: 0; padding: 0; }
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  /* Dissolve into the page rather than ending on a hard edge. Held opaque to
-     76% so there is still light behind the device before it falls away. */
-  mask-image: linear-gradient(to bottom, #000 76%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 76%, transparent 100%);
+  /* The light is kept off the words. Colour behind a headline is the thing
+     that makes a hero tiring to read — long copy on a shifting field takes
+     constant re-focusing, and it is worst for older eyes and for anyone with
+     low vision. So the top third stays clean warm off-white and the gradient
+     only comes up around the device, which reads as the phone casting it. */
+  mask-image: linear-gradient(to bottom,
+    transparent 0%, transparent 30%, rgba(0, 0, 0, 0.14) 46%,
+    rgba(0, 0, 0, 0.6) 62%, #000 76%, #000 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0%, transparent 30%, rgba(0, 0, 0, 0.14) 46%,
+    rgba(0, 0, 0, 0.6) 62%, #000 76%, #000 90%, transparent 100%);
 }
 
 .aurora__orb {
@@ -363,7 +373,7 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: 50%;
   filter: blur(58px);
   mix-blend-mode: multiply;
-  opacity: 0.72;
+  opacity: 0.66;
   will-change: transform;
 }
 
@@ -376,38 +386,38 @@ ul, ol { margin: 0; padding: 0; }
 .aurora__orb--5 { background-repeat: no-repeat; }
 
 .aurora__orb--1 {
-  width: 46vw; height: 46vw; min-width: 380px; min-height: 380px;
-  top: -12%; left: -6%;
+  width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
+  top: 40%; left: 12%;
   background: radial-gradient(circle at 50% 50%, var(--g1) 0%, var(--g1) 30%, transparent 72%);
-  animation: drift1 26s var(--ease) infinite alternate;
+  animation: drift1 42s var(--ease) infinite alternate;
 }
 
 .aurora__orb--2 {
-  width: 40vw; height: 40vw; min-width: 340px; min-height: 340px;
-  top: -6%; right: -8%;
+  width: 30vw; height: 30vw; min-width: 270px; min-height: 270px;
+  top: 36%; right: 10%;
   background: radial-gradient(circle at 50% 50%, var(--g4) 0%, var(--g4) 28%, transparent 72%);
-  animation: drift2 31s var(--ease) infinite alternate;
+  animation: drift2 48s var(--ease) infinite alternate;
 }
 
 .aurora__orb--3 {
-  width: 52vw; height: 52vw; min-width: 420px; min-height: 420px;
-  top: 26%; left: 22%;
+  width: 38vw; height: 38vw; min-width: 330px; min-height: 330px;
+  top: 54%; left: 30%;
   background: radial-gradient(circle at 50% 50%, var(--g3) 0%, var(--g3) 26%, transparent 70%);
-  animation: drift3 24s var(--ease) infinite alternate;
+  animation: drift3 38s var(--ease) infinite alternate;
 }
 
 .aurora__orb--4 {
   width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
-  bottom: 4%; left: 4%;
+  bottom: 2%; left: 20%;
   background: radial-gradient(circle at 50% 50%, var(--g2) 0%, var(--g2) 30%, transparent 72%);
-  animation: drift4 34s var(--ease) infinite alternate;
+  animation: drift4 52s var(--ease) infinite alternate;
 }
 
 .aurora__orb--5 {
   width: 38vw; height: 38vw; min-width: 320px; min-height: 320px;
-  bottom: -6%; right: 6%;
+  bottom: -4%; right: 18%;
   background: radial-gradient(circle at 50% 50%, var(--g5) 0%, var(--g5) 26%, transparent 72%);
-  animation: drift5 29s var(--ease) infinite alternate;
+  animation: drift5 45s var(--ease) infinite alternate;
 }
 
 @keyframes drift1 { from { transform: translate3d(0, 0, 0) scale(1); }
@@ -432,18 +442,27 @@ ul, ol { margin: 0; padding: 0; }
   background-size: 160px 160px;
 }
 
+/* Slightly smaller, and noticeably looser than the display setting used
+   further down the page. At 0.95 line-height the descenders of one line
+   nearly touch the caps of the next, which is exactly the kind of tight
+   setting that gets hard to track for older readers — 1.04 costs a few
+   pixels of height and reads far more calmly. */
 .hero__title {
-  font-size: clamp(2.9rem, 8.4vw, 6.1rem);
-  line-height: 0.95;
-  max-width: 15ch;
+  font-size: clamp(2.6rem, 7.4vw, 5.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  max-width: 16ch;
   margin-inline: auto;
   text-wrap: balance;
 }
 
 .hero__lead {
   margin: clamp(22px, 3vw, 30px) auto 0;
-  max-width: 46ch;
+  max-width: 44ch;
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  line-height: 1.5;
   text-align: center;
+  text-wrap: pretty;
 }
 
 .hero__actions {
@@ -454,11 +473,10 @@ ul, ol { margin: 0; padding: 0; }
   margin-top: clamp(30px, 4vw, 42px);
 }
 
-/* Darker than the usual muted grey. This line lands on the busiest, most
-   saturated part of the aurora: measured against the lavender behind it,
-   --ink-2 gives 3.9:1 and --ink-3 far less, both under the 4.5:1 that 14px
-   text needs. This value measures 5.2:1 there. */
-.hero__note { margin-top: 18px; font-size: 14px; color: #403D38; }
+/* 15px rather than 14: this is the smallest type in the hero, and it sits
+   lowest, closest to where the gradient starts. Kept dark for the same
+   reason. */
+.hero__note { margin-top: 20px; font-size: 15px; color: #403D38; }
 
 /* The device sits in a stage that owns the gradient light behind it. */
 .hero__stage {
