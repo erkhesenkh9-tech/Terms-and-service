@@ -580,12 +580,23 @@ ul, ol { margin: 0; padding: 0; }
   z-index: 2;
 }
 
+/* The markers sit in their own layer over the scene. The list itself must not
+   swallow pointer events or it would blanket the whole map. */
+.pins {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  pointer-events: none;
+  z-index: 3;
+}
+
 .pin {
+  pointer-events: auto;
   position: absolute;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 15px 9px 11px;
+  padding: 6px 16px 6px 6px;
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -605,13 +616,53 @@ ul, ol { margin: 0; padding: 0; }
 
 .pin.is-in { opacity: 1; transform: none; }
 
-.pin__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--c, var(--g4));
+/* Category icon. The colour comes from an inline --c per marker so each one
+   carries its own slice of the logo gradient. */
+.pin__icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
   flex: none;
-  box-shadow: 0 0 0 4px rgba(113, 141, 233, 0.18);
+  border-radius: 50%;
+  color: var(--c, var(--g4));
+  background: color-mix(in srgb, var(--c, var(--g4)) 15%, transparent);
+  transition: background-color 0.4s var(--ease), transform 0.5s var(--ease);
+}
+
+.pin__icon svg { width: 15px; height: 15px; }
+
+/* Hover: the marker lifts and takes its category colour, and — the part that
+   makes it read as a map rather than a row of chips — every other marker
+   recedes, so the one under the cursor is briefly the only category on the
+   Bay. */
+@media (hover: hover) {
+  .pin {
+    transition:
+      opacity 0.45s var(--ease),
+      transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1),
+      box-shadow 0.45s var(--ease),
+      background-color 0.45s var(--ease);
+  }
+
+  .mapscene:hover .pin.is-in { opacity: 0.45; }
+
+  .mapscene .pin.is-in:hover {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.08);
+    background: #fff;
+    box-shadow:
+      0 2px 6px rgba(14, 13, 11, 0.10),
+      0 14px 30px rgba(14, 13, 11, 0.16),
+      0 0 0 1.5px color-mix(in srgb, var(--c, var(--g4)) 45%, transparent);
+    z-index: 5;
+  }
+
+  .pin:hover .pin__icon {
+    background: var(--c, var(--g4));
+    color: #fff;
+    transform: scale(1.08);
+  }
 }
 
 .pin--a { left: 4%; top: 12%; --c: var(--g1); }
