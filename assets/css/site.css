@@ -166,6 +166,11 @@ ul, ol { margin: 0; padding: 0; }
   margin-bottom: 22px;
 }
 
+.section-head {
+  max-width: 44ch;
+  margin-bottom: clamp(32px, 4vw, 52px);
+}
+
 .h2 { font-size: clamp(2.1rem, 5vw, 3.7rem); }
 .h3 { font-size: clamp(1.35rem, 2.2vw, 1.75rem); letter-spacing: -0.025em; }
 
@@ -616,33 +621,6 @@ ul, ol { margin: 0; padding: 0; }
 .pin--e { left: 8%; top: 74%; --c: var(--g3); }
 .pin--f { right: 9%; top: 68%; --c: var(--g1); }
 
-/* --- Centred section header ----------------------------------------------- */
-.center-head {
-  max-width: 44ch;
-  margin: 0 auto clamp(40px, 5vw, 64px);
-  text-align: center;
-}
-
-.center-head .lead { margin-inline: auto; }
-
-/* --- Two devices side by side --------------------------------------------
-   Used to show one screen in both themes at once; the slight opposing tilt
-   stops it reading as a spec sheet. */
-.duo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: clamp(10px, 2.5vw, 40px);
-}
-
-.duo .phone {
-  width: clamp(150px, 21vw, 274px);
-  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
-}
-
-.duo .phone:first-child { transform: rotate(-3.5deg) translateY(-2%); }
-.duo .phone:last-child { transform: rotate(3.5deg) translateY(2%); }
-
 /* --- Split layout (sections 3, 5, 6) -------------------------------------- */
 .split {
   display: grid;
@@ -661,28 +639,6 @@ ul, ol { margin: 0; padding: 0; }
   font-size: 15px;
   line-height: 1.55;
   color: var(--ink-3);
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 30px;
-  list-style: none;
-}
-
-.chip {
-  padding: 10px 18px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 15px;
-  color: var(--ink-2);
-  background: rgba(255, 255, 255, 0.5);
-  transition: transform 0.4s var(--ease), border-color 0.4s var(--ease), color 0.4s var(--ease);
-}
-
-@media (hover: hover) {
-  .chip:hover { transform: translateY(-2px); border-color: var(--ink); color: var(--ink); }
 }
 
 /* --- Section 4: the loop -------------------------------------------------- */
@@ -735,6 +691,77 @@ ul, ol { margin: 0; padding: 0; }
 
 .loop__step.is-active h3 { color: var(--ink); }
 .loop__step p { margin-top: 10px; color: var(--ink-2); max-width: 40ch; }
+
+/* --- Postcard stack -------------------------------------------------------
+   Photos from events, dealt out like a handful of prints. They sit squared up
+   on top of each other and fan apart as the section arrives, which is the
+   whole point: a night out is a pile of pictures, not a grid.
+
+   Every card animates from the same stacked origin, so the fan is created
+   entirely by the end state — nothing has to be measured in JS. */
+.stack {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: clamp(320px, 42vw, 460px);
+  perspective: 1200px;
+}
+
+.stack__card {
+  grid-area: 1 / 1;
+  width: min(300px, 66vw);
+  padding: 12px 12px 44px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow:
+    0 1px 2px rgba(14, 13, 11, 0.10),
+    0 18px 44px rgba(14, 13, 11, 0.18);
+  /* Stacked and square before the reveal. */
+  transform: rotate(0deg) translate(0, 0) scale(0.94);
+  opacity: 0;
+  transition:
+    transform 1s cubic-bezier(0.22, 1.3, 0.4, 1),
+    opacity 0.7s var(--ease);
+  transition-delay: var(--d, 0s);
+}
+
+.stack__card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--bg-warm);
+}
+
+.stack__caption {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* Dealt out. Each card gets its own resting angle and offset. */
+.stack.is-in .stack__card { opacity: 1; }
+.stack.is-in .stack__card--1 { transform: rotate(-9deg) translate(-22%, 4%) scale(1); }
+.stack.is-in .stack__card--2 { transform: rotate(4deg) translate(14%, -6%) scale(1); }
+.stack.is-in .stack__card--3 { transform: rotate(-2deg) translate(-2%, 12%) scale(1); }
+
+/* The top card lifts a little on hover, like lifting a print off the pile. */
+@media (hover: hover) {
+  .stack__card { transition-property: transform, opacity, box-shadow; }
+  .stack.is-in .stack__card:hover {
+    transform: rotate(0deg) translate(0, -8px) scale(1.03);
+    box-shadow: 0 2px 4px rgba(14, 13, 11, 0.12), 0 28px 60px rgba(14, 13, 11, 0.24);
+    z-index: 4;
+  }
+}
+
+@media (max-width: 780px) {
+  .stack { min-height: 340px; }
+  .stack__card { width: min(230px, 60vw); padding: 9px 9px 34px; }
+  .stack.is-in .stack__card--1 { transform: rotate(-8deg) translate(-16%, 4%) scale(1); }
+  .stack.is-in .stack__card--2 { transform: rotate(5deg) translate(12%, -6%) scale(1); }
+}
 
 /* --- Section 7: memories -------------------------------------------------- */
 .memory {
@@ -970,20 +997,68 @@ ul, ol { margin: 0; padding: 0; }
 .prose ul { margin-top: 12px; padding-left: 20px; color: var(--ink-2); }
 .prose li { margin-top: 8px; }
 
-/* --- Scroll reveal -------------------------------------------------------- */
+/* --- Scroll reveal --------------------------------------------------------
+   One base rule, several entrances. Everything arriving identically is what
+   made the page feel flat; giving each kind of thing its own move — copy
+   rising, media settling in from a slight overshoot, columns coming in from
+   the side they live on — reads as choreography instead of a single effect
+   applied everywhere.
+
+   Every variant lands on the same final state (opacity 1, no transform, no
+   filter), so nothing can be stranded mid-animation. */
 [data-reveal] {
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    filter var(--dur) var(--ease);
   transition-delay: var(--d, 0s);
+  transform: translateY(26px);
 }
 
-[data-reveal].is-in { opacity: 1; transform: none; }
+/* Slight overshoot. Used where something should feel like it lands rather
+   than slides to a stop. */
+[data-reveal='pop'],
+[data-reveal='media'] {
+  transition-timing-function: cubic-bezier(0.34, 1.42, 0.64, 1);
+}
+
+[data-reveal='pop'] { transform: translateY(24px) scale(0.94); }
+
+/* Media settles out of a soft focus — the blur is what stops a photo or a
+   screenshot from just sliding like a block of text. */
+[data-reveal='media'] {
+  transform: translateY(30px) scale(0.96);
+  filter: blur(10px);
+}
+
+[data-reveal='left'] { transform: translate3d(-42px, 12px, 0); }
+[data-reveal='right'] { transform: translate3d(42px, 12px, 0); }
+
+/* For a big display line: rises out of its own baseline rather than fading in
+   as a block. */
+[data-reveal='rise'] {
+  transform: translateY(0.34em);
+  clip-path: inset(-0.25em -0.2em -0.18em -0.2em);
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: inset(-100% -100% -100% -100%);
+}
 
 /* Without JS nothing would ever get `.is-in`, so the page must not depend on
    it for legibility. */
 .no-js [data-reveal],
-.no-js .pin { opacity: 1; transform: none; }
+.no-js .pin {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: none;
+}
+
 
 /* --- Responsive ----------------------------------------------------------- */
 @media (max-width: 900px) {
@@ -1050,7 +1125,6 @@ ul, ol { margin: 0; padding: 0; }
   .aurora__orb--5 { display: none; }
   .aurora__grain { opacity: 0.22; }
 
-  .duo .phone { filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.5)); }
   .mapscene { padding-inline: 16px; border-radius: var(--r-lg); }
   .mapscene__inner { min-height: 400px; }
   /* Six floating pins is noise at this width — keep the four that frame the
@@ -1091,11 +1165,15 @@ ul, ol { margin: 0; padding: 0; }
     scroll-behavior: auto !important;
   }
 
-  /* Reveals must not strand content invisible once their transition is gone. */
+  /* Reveals must not strand content invisible once their transition is gone.
+     Every variant's start state is cleared here, not just the transform —
+     a blurred or clipped element left behind is as broken as an invisible one. */
   [data-reveal],
   .pin {
     opacity: 1 !important;
     transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
   }
 
   .memory__card--live { transform: rotate(-3deg) !important; opacity: 1 !important; }

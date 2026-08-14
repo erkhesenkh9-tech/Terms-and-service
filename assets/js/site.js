@@ -61,10 +61,25 @@
     });
   }
 
+  /* --- Stagger ------------------------------------------------------------
+     Anything inside [data-stagger] gets its delay from its position, so the
+     markup does not carry a hand-written --d on every line. The step can be
+     tuned per container with data-stagger="0.09". Delays already set by hand
+     win, so one-off timings still work. */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-stagger]'), function (group) {
+    var step = parseFloat(group.getAttribute('data-stagger')) || 0.07;
+    var kids = group.querySelectorAll('[data-reveal]');
+    Array.prototype.forEach.call(kids, function (el, i) {
+      if (!el.style.getPropertyValue('--d')) {
+        el.style.setProperty('--d', (i * step).toFixed(3) + 's');
+      }
+    });
+  });
+
   /* --- Reveal on entry ----------------------------------------------------
-     One observer for everything that fades up, including the map pins and the
-     memory cards. Elements are unobserved once shown so nothing re-animates
-     on the way back up. */
+     One observer for everything that animates in, including the map pins and
+     the memory cards. Elements are unobserved once shown so nothing
+     re-animates on the way back up. */
   var revealables = document.querySelectorAll('[data-reveal], [data-pin], [data-memory]');
 
   if (!('IntersectionObserver' in window)) {
