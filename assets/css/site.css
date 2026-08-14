@@ -519,38 +519,44 @@ ul, ol { margin: 0; padding: 0; }
 
 .hero__map { width: 100%; border-radius: inherit; }
 
+/* --- Hero halo ------------------------------------------------------------
+   The animated part of the hero background. A conic ring of the logo colours,
+   blurred until it is only light, turning slowly behind the map — so the
+   colour visibly moves around the panel without anything happening to the
+   screenshot itself.
+
+   Rotation of an already-rasterised blur is a compositor transform, which is
+   why this can turn continuously and cost nothing. */
+.hero__halo {
+  position: absolute;
+  left: 50%;
+  top: -6%;
+  width: min(1180px, 118%);
+  aspect-ratio: 1 / 0.78;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--g1), var(--g2), var(--g3), var(--g4), var(--g5), var(--g1)
+  );
+  filter: blur(80px);
+  opacity: 0.42;
+  transform: translateX(-50%);
+  animation: haloTurn 34s linear infinite;
+}
+
+@keyframes haloTurn {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to { transform: translateX(-50%) rotate(360deg); }
+}
+
+/* The device sits above the halo. */
+.hero__device { position: relative; z-index: 1; }
+
 @keyframes heroIn {
   from { transform: translateY(34px) scale(0.975); }
   to { transform: none; }
-}
-
-/* A slow reflection travelling across the glass. It is the one thing keeping
-   the hero alive between scrolls, so it is kept faint and given a long rest
-   between passes: the sweep occupies about a fifth of the cycle and the rest
-   is stillness, which is why the keyframes hold at both ends. */
-.hero__sheen {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  /* Narrow and faint. A wide white band over an already-bright map does not
-     read as a reflection, it reads as the image being washed out — so this is
-     a thin highlight that brightens the surface as it crosses rather than
-     covering it. */
-  background: linear-gradient(
-    104deg,
-    transparent 44%,
-    rgba(255, 255, 255, 0.10) 48.5%,
-    rgba(255, 255, 255, 0.20) 50%,
-    rgba(255, 255, 255, 0.10) 51.5%,
-    transparent 56%
-  );
-  animation: heroSheen 11s ease-in-out 1.4s infinite;
-}
-
-@keyframes heroSheen {
-  0% { transform: translateX(-115%); }
-  22% { transform: translateX(115%); }
-  100% { transform: translateX(115%); }
 }
 
 /* --- Device presentation --------------------------------------------------
@@ -1356,8 +1362,8 @@ ul, ol { margin: 0; padding: 0; }
 
   .memory__card--live { transform: rotate(-3deg) !important; opacity: 1 !important; }
   .memory__card--saved { transform: translateY(30px) rotate(3deg) !important; }
-  /* The parallax target and the entrance/sheen wrappers all rest. */
+  /* The parallax target, the entrance wrapper and the halo all rest. */
   .hero__device,
   .hero__frame { transform: none !important; }
-  .hero__sheen { display: none !important; }
+  .hero__halo { animation: none !important; }
 }
