@@ -163,7 +163,10 @@
   var scene = document.querySelector('[data-proximity]');
   if (scene && !reduced.matches && window.matchMedia('(hover: hover)').matches) {
     var marks = Array.prototype.slice.call(scene.querySelectorAll('.pin'));
-    var RADIUS = 260;      // px at which a marker starts to notice the pointer
+    // Deliberately wide. At a short radius the markers only stir once the
+    // pointer is basically on one, which is barely different from hover; this
+    // far out, moving anywhere across the scene sends a wave through them.
+    var RADIUS = 460;
     var pointer = null;    // null when the pointer is outside the scene
     var running = false;
 
@@ -201,16 +204,28 @@
       window.requestAnimationFrame(frame);
     };
 
-    scene.addEventListener('pointermove', function (event) {
+    // Listening on the window rather than the scene. Bound to the scene, the
+    // radius could never exceed the element itself — the pointer stopped
+    // existing the moment it crossed the edge, which capped the effect at
+    // whatever the box happened to be. Now the scene's rect is grown by the
+    // radius and anything inside that counts, so the markers start moving
+    // while the pointer is still outside the map entirely.
+    window.addEventListener('pointermove', function (event) {
       if (event.pointerType === 'touch') return;
-      pointer = { x: event.clientX, y: event.clientY };
-      scene.classList.add('is-pointer');
-      start();
-    }, { passive: true });
 
-    scene.addEventListener('pointerleave', function () {
-      pointer = null;
-      scene.classList.remove('is-pointer');
+      var r = scene.getBoundingClientRect();
+      var inside =
+        event.clientX > r.left - RADIUS && event.clientX < r.right + RADIUS &&
+        event.clientY > r.top - RADIUS && event.clientY < r.bottom + RADIUS;
+
+      if (!inside) {
+        if (!pointer) return;          // already idle, nothing to unwind
+        pointer = null;
+        scene.classList.remove('is-pointer');
+      } else {
+        pointer = { x: event.clientX, y: event.clientY };
+        scene.classList.add('is-pointer');
+      }
       start();
     }, { passive: true });
   }

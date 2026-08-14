@@ -264,23 +264,31 @@
     <p class="hero__note" data-reveal>Free on iPhone · Bay Area beta</p>
 
     <div class="hero__stage">
-      <!-- Art-directed rather than just scaled: the full Bay is unreadable at
-           phone widths, so narrow screens get a crop that keeps the filter row
-           and the dense SF/Oakland cluster. -->
-      <picture>
-        <source
-          media="(max-width: 700px)"
-          srcset="/assets/img/map-narrow.webp"
-          width="570" height="682" />
-        <img
-          class="hero__map"
-          data-parallax
-          src="/assets/img/map-wide.webp"
-          width="919" height="682"
-          fetchpriority="high"
-          decoding="async"
-          alt="The Vezo map across the whole San Francisco Bay Area — event pins clustered thickly over San Francisco and Oakland, thinning out towards Walnut Creek and Hayward, with filters for Now, Today, Weekend and Trending." />
-      </picture>
+      <!-- Two wrappers on purpose: the outer one carries the scroll parallax
+           (an inline transform written by site.js), the inner one carries the
+           CSS entrance and clips the sheen. One element cannot do both without
+           the two transforms overwriting each other. -->
+      <div class="hero__device" data-parallax>
+        <div class="hero__frame">
+          <!-- Art-directed rather than just scaled: the full Bay is unreadable
+               at phone widths, so narrow screens get a crop that keeps the
+               filter row and the dense SF/Oakland cluster. -->
+          <picture>
+            <source
+              media="(max-width: 700px)"
+              srcset="/assets/img/map-narrow.webp"
+              width="570" height="682" />
+            <img
+              class="hero__map"
+              src="/assets/img/map-wide.webp"
+              width="919" height="682"
+              fetchpriority="high"
+              decoding="async"
+              alt="The Vezo map across the whole San Francisco Bay Area — event pins clustered thickly over San Francisco and Oakland, thinning out towards Walnut Creek and Hayward, with filters for Now, Today, Weekend and Trending." />
+          </picture>
+          <span class="hero__sheen" aria-hidden="true"></span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
