@@ -627,42 +627,41 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: 50%;
   color: var(--c, var(--g4));
   background: color-mix(in srgb, var(--c, var(--g4)) 15%, transparent);
-  transition: background-color 0.4s var(--ease), transform 0.5s var(--ease);
 }
 
 .pin__icon svg { width: 15px; height: 15px; }
 
-/* Hover: the marker lifts and takes its category colour, and — the part that
-   makes it read as a map rather than a row of chips — every other marker
-   recedes, so the one under the cursor is briefly the only category on the
-   Bay. */
-@media (hover: hover) {
-  .pin {
-    transition:
-      opacity 0.45s var(--ease),
-      transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1),
-      box-shadow 0.45s var(--ease),
-      background-color 0.45s var(--ease);
-  }
+/* --- Proximity ------------------------------------------------------------
+   --near is written by site.js every frame: 0 when the pointer is far, 1 when
+   it is on the marker, eased in between. Everything below interpolates off
+   that single number, so the markers wake up as the pointer approaches rather
+   than snapping the moment it lands on one.
 
-  .mapscene:hover .pin.is-in { opacity: 0.45; }
+   Deliberately no transitions on these properties. --near is already smoothed
+   in JS, and a CSS transition on top would lag behind a value that has
+   changed again before it finishes. */
+.pin.is-in {
+  transform:
+    translateY(calc(var(--near, 0) * -7px))
+    scale(calc(1 + var(--near, 0) * 0.09));
+  background: color-mix(in srgb, #fff calc(82% + var(--near, 0) * 18%), transparent);
+  box-shadow:
+    var(--shadow-sm),
+    0 calc(var(--near, 0) * 16px) calc(var(--near, 0) * 32px) rgba(14, 13, 11, calc(var(--near, 0) * 0.16)),
+    0 0 0 calc(var(--near, 0) * 1.5px) color-mix(in srgb, var(--c, var(--g4)) 45%, transparent);
+  z-index: calc(3 + var(--near, 0) * 3);
+}
 
-  .mapscene .pin.is-in:hover {
-    opacity: 1;
-    transform: translateY(-4px) scale(1.08);
-    background: #fff;
-    box-shadow:
-      0 2px 6px rgba(14, 13, 11, 0.10),
-      0 14px 30px rgba(14, 13, 11, 0.16),
-      0 0 0 1.5px color-mix(in srgb, var(--c, var(--g4)) 45%, transparent);
-    z-index: 5;
-  }
+.pin.is-in .pin__icon {
+  background: color-mix(in srgb, var(--c, var(--g4)) calc(15% + var(--near, 0) * 85%), transparent);
+  color: color-mix(in srgb, #fff calc(var(--near, 0) * 100%), var(--c, var(--g4)));
+  transform: scale(calc(1 + var(--near, 0) * 0.1));
+}
 
-  .pin:hover .pin__icon {
-    background: var(--c, var(--g4));
-    color: #fff;
-    transform: scale(1.08);
-  }
+/* While the pointer is anywhere in the scene the far markers recede, so the
+   ones you are approaching are briefly the only categories on the Bay. */
+.mapscene.is-pointer .pin.is-in {
+  opacity: calc(0.42 + var(--near, 0) * 0.58);
 }
 
 .pin--a { left: 4%; top: 12%; --c: var(--g1); }
@@ -705,7 +704,33 @@ ul, ol { margin: 0; padding: 0; }
   align-self: start;
 }
 
-.loop__steps { list-style: none; display: grid; gap: 4px; }
+/* The four steps share a rail, and the filled part of it tracks how far you
+   have read. The dots sit on the same axis, so the fill visibly reaches each
+   one as its step becomes the active one. */
+.loop__steps {
+  position: relative;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  padding-left: 0;
+}
+
+.loop__steps::before,
+.loop__steps::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 0;
+  width: 2px;
+  border-radius: 2px;
+}
+
+.loop__steps::before { bottom: 0; background: var(--line); }
+
+.loop__steps::after {
+  height: calc(var(--p, 0) * 100%);
+  background: linear-gradient(to bottom, var(--g1), var(--g4));
+}
 
 .loop__step {
   position: relative;
@@ -1100,6 +1125,39 @@ ul, ol { margin: 0; padding: 0; }
   clip-path: inset(-100% -100% -100% -100%);
 }
 
+/* --- Word-by-word headings ------------------------------------------------
+   Each word sits in its own clipped line and rides up out of it. Split by
+   site.js; until that runs the heading is ordinary text, which is also what a
+   crawler and a copy-paste see.
+
+   The mask needs room below the baseline or descenders get sliced, hence the
+   padding/negative-margin pair — the box grows to fit the tail of a "g" while
+   the line still occupies its normal height. */
+.is-split .word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.is-split .word__i {
+  display: inline-block;
+  transform: translateY(115%);
+  transition: transform 0.78s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--wi) * 0.042s + var(--d, 0s));
+}
+
+.is-in.is-split .word__i { transform: none; }
+
+/* Splitting supplies the entrance, so the block-level reveal stands down and
+   only the words move. */
+[data-reveal][data-split] {
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+}
+
 /* Without JS nothing would ever get `.is-in`, so the page must not depend on
    it for legibility. */
 .no-js [data-reveal],
@@ -1226,6 +1284,14 @@ ul, ol { margin: 0; padding: 0; }
     filter: none !important;
     clip-path: none !important;
   }
+
+  /* Split words live inside an overflow-hidden mask, so a stranded transform
+     here does not dim them — it hides them completely. */
+  .is-split .word__i { transform: none !important; }
+
+  /* Proximity is skipped entirely in JS, but the markers still resolve their
+     transform through --near, so pin it at rest. */
+  .pin.is-in { transform: none !important; }
 
   .memory__card--live { transform: rotate(-3deg) !important; opacity: 1 !important; }
   .memory__card--saved { transform: translateY(30px) rotate(3deg) !important; }

@@ -61,6 +61,41 @@
     });
   }
 
+  /* --- Word split ---------------------------------------------------------
+     Headings rise a word at a time out of a clipped line, which is the single
+     biggest difference between a heading that appears and a heading that
+     arrives. Done here rather than in the markup so the HTML stays readable
+     and the text is still one string for search engines and copy-paste.
+
+     Only text nodes are touched — a <br> inside a heading survives — and each
+     word keeps a real space after it, so selecting the heading still yields
+     normal text rather than wordsruntogether. */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-split]'), function (host) {
+    var index = 0;
+
+    Array.prototype.slice.call(host.childNodes).forEach(function (node) {
+      if (node.nodeType !== 3) return;                 // element (e.g. <br>): leave alone
+      if (!node.nodeValue.trim()) return;
+
+      var frag = document.createDocumentFragment();
+      node.nodeValue.split(/(\s+)/).forEach(function (chunk) {
+        if (!chunk) return;
+        if (!chunk.trim()) { frag.appendChild(document.createTextNode(chunk)); return; }
+        var mask = document.createElement('span');
+        mask.className = 'word';
+        var inner = document.createElement('span');
+        inner.className = 'word__i';
+        inner.style.setProperty('--wi', index++);
+        inner.textContent = chunk;
+        mask.appendChild(inner);
+        frag.appendChild(mask);
+      });
+      host.replaceChild(frag, node);
+    });
+
+    if (index) host.classList.add('is-split');
+  });
+
   /* --- Stagger ------------------------------------------------------------
      Anything inside [data-stagger] gets its delay from its position, so the
      markup does not carry a hand-written --d on every line. The step can be
@@ -92,7 +127,11 @@
         entry.target.classList.add('is-in');
         revealObserver.unobserve(entry.target);
       });
-    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+      // Fires close to the edge of the viewport rather than a long way into
+      // it. Waiting until something is 12% up the screen meant you could be
+      // looking straight at a blank block before it decided to arrive — which
+      // is the opposite of a reveal helping you read.
+    }, { rootMargin: '0px 0px -4% 0px', threshold: 0.04 });
 
     Array.prototype.forEach.call(revealables, function (el) { revealObserver.observe(el); });
 
@@ -109,6 +148,98 @@
 
       Array.prototype.forEach.call(steps, function (el) { stepObserver.observe(el); });
     }
+  }
+
+  /* --- Marker proximity ---------------------------------------------------
+     The category markers answer to how close the pointer is, not to whether
+     it is on top of them. Each one gets a --near from 0 to 1 based on distance
+     and the CSS interpolates everything else off that, so approaching the map
+     wakes the nearby categories before you ever reach one.
+
+     The value is eased in JS rather than by a CSS transition: --near is
+     rewritten every frame, and a transition on top of that would always be
+     chasing a value that had already moved. Lerping here also means the decay
+     when the pointer leaves is free. */
+  var scene = document.querySelector('[data-proximity]');
+  if (scene && !reduced.matches && window.matchMedia('(hover: hover)').matches) {
+    var marks = Array.prototype.slice.call(scene.querySelectorAll('.pin'));
+    var RADIUS = 260;      // px at which a marker starts to notice the pointer
+    var pointer = null;    // null when the pointer is outside the scene
+    var running = false;
+
+    var frame = function () {
+      var settled = true;
+
+      marks.forEach(function (el) {
+        var target = 0;
+
+        if (pointer) {
+          var r = el.getBoundingClientRect();
+          var dx = pointer.x - (r.left + r.width / 2);
+          var dy = pointer.y - (r.top + r.height / 2);
+          var d = Math.sqrt(dx * dx + dy * dy);
+          // Smoothstep so the falloff eases at both ends instead of ramping
+          // linearly, which reads as mechanical.
+          var t = Math.max(0, Math.min(1, 1 - d / RADIUS));
+          target = t * t * (3 - 2 * t);
+        }
+
+        var current = parseFloat(el.style.getPropertyValue('--near')) || 0;
+        var next = current + (target - current) * 0.18;
+        if (Math.abs(next - target) < 0.002) next = target;
+        if (next !== current) settled = false;
+        el.style.setProperty('--near', next.toFixed(3));
+      });
+
+      if (settled && !pointer) { running = false; return; }
+      window.requestAnimationFrame(frame);
+    };
+
+    var start = function () {
+      if (running) return;
+      running = true;
+      window.requestAnimationFrame(frame);
+    };
+
+    scene.addEventListener('pointermove', function (event) {
+      if (event.pointerType === 'touch') return;
+      pointer = { x: event.clientX, y: event.clientY };
+      scene.classList.add('is-pointer');
+      start();
+    }, { passive: true });
+
+    scene.addEventListener('pointerleave', function () {
+      pointer = null;
+      scene.classList.remove('is-pointer');
+      start();
+    }, { passive: true });
+  }
+
+  /* --- Product loop progress ----------------------------------------------
+     A line that fills as you move through Discover → Join → Experience →
+     Remember. The steps already highlight one at a time; this is what tells
+     you how many are left. */
+  var steps = document.querySelector('[data-progress]');
+  if (steps) {
+    var pTick = false;
+
+    var measure = function () {
+      pTick = false;
+      var r = steps.getBoundingClientRect();
+      var mid = window.innerHeight * 0.55;
+      // 0 when the top of the list reaches the read line, 1 when the bottom does.
+      var p = (mid - r.top) / Math.max(1, r.height);
+      steps.style.setProperty('--p', Math.max(0, Math.min(1, p)).toFixed(3));
+    };
+
+    window.addEventListener('scroll', function () {
+      if (pTick) return;
+      pTick = true;
+      window.requestAnimationFrame(measure);
+    }, { passive: true });
+
+    window.addEventListener('resize', measure, { passive: true });
+    measure();
   }
 
   /* --- Hero parallax ------------------------------------------------------
