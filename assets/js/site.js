@@ -161,6 +161,58 @@
      chasing a value that had already moved. Lerping here also means the decay
      when the pointer leaves is free. */
   var scene = document.querySelector('[data-proximity]');
+
+  /* --- Marker activation --------------------------------------------------
+     Click, tap or keyboard focus pins a marker at full strength. This is what
+     makes the categories usable at all on touch, where there is no pointer to
+     be near and the proximity effect simply never happens. Locked markers are
+     skipped by the proximity loop so the two cannot fight over --near. */
+  if (scene) {
+    var locked = null;
+    var lockedBy = null;   // 'click' keeps the marker up; 'focus' releases on blur
+
+    var unlock = function () {
+      if (!locked) return;
+      locked.classList.remove('is-locked');
+      locked.querySelector('.pin__btn').setAttribute('aria-pressed', 'false');
+      locked = null;
+      lockedBy = null;
+      scene.classList.remove('has-lock');
+    };
+
+    var lock = function (li, source) {
+      if (locked && locked !== li) unlock();
+      locked = li;
+      lockedBy = source;
+      li.classList.add('is-locked');
+      li.style.setProperty('--near', '1');
+      li.querySelector('.pin__btn').setAttribute('aria-pressed', 'true');
+      scene.classList.add('has-lock');
+    };
+
+    scene.addEventListener('click', function (event) {
+      var btn = event.target.closest('.pin__btn');
+      if (!btn) return;
+      var li = btn.closest('.pin');
+      if (li === locked && lockedBy === 'click') unlock();
+      else lock(li, 'click');
+    });
+
+    // Tabbing to a marker shows the same thing the pointer would.
+    scene.addEventListener('focusin', function (event) {
+      var btn = event.target.closest('.pin__btn');
+      if (btn && locked !== btn.closest('.pin')) lock(btn.closest('.pin'), 'focus');
+    });
+
+    scene.addEventListener('focusout', function () {
+      if (lockedBy === 'focus') unlock();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') unlock();
+    });
+  }
+
   if (scene && !reduced.matches && window.matchMedia('(hover: hover)').matches) {
     var marks = Array.prototype.slice.call(scene.querySelectorAll('.pin'));
     // Deliberately wide. At a short radius the markers only stir once the
@@ -174,6 +226,10 @@
       var settled = true;
 
       marks.forEach(function (el) {
+        // A clicked or focused marker holds at full strength; the pointer does
+        // not get to drag it back down.
+        if (el.classList.contains('is-locked')) return;
+
         var target = 0;
 
         if (pointer) {

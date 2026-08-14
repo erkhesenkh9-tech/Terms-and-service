@@ -378,7 +378,7 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: 50%;
   filter: blur(58px);
   mix-blend-mode: multiply;
-  opacity: 0.74;
+  opacity: 0.5;
   will-change: transform;
 }
 
@@ -394,47 +394,47 @@ ul, ol { margin: 0; padding: 0; }
   width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
   top: 44%; left: -2%;
   background: radial-gradient(circle at 50% 50%, var(--g1) 0%, var(--g1) 30%, transparent 72%);
-  animation: drift1 42s var(--ease) infinite alternate;
+  animation: drift1 26s var(--ease) infinite alternate;
 }
 
 .aurora__orb--2 {
   width: 30vw; height: 30vw; min-width: 270px; min-height: 270px;
   top: 40%; right: -4%;
   background: radial-gradient(circle at 50% 50%, var(--g4) 0%, var(--g4) 28%, transparent 72%);
-  animation: drift2 48s var(--ease) infinite alternate;
+  animation: drift2 32s var(--ease) infinite alternate;
 }
 
 .aurora__orb--3 {
   width: 38vw; height: 38vw; min-width: 330px; min-height: 330px;
   top: 62%; left: 26%;
   background: radial-gradient(circle at 50% 50%, var(--g3) 0%, var(--g3) 26%, transparent 70%);
-  animation: drift3 38s var(--ease) infinite alternate;
+  animation: drift3 23s var(--ease) infinite alternate;
 }
 
 .aurora__orb--4 {
   width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
   bottom: -2%; left: 8%;
   background: radial-gradient(circle at 50% 50%, var(--g2) 0%, var(--g2) 30%, transparent 72%);
-  animation: drift4 52s var(--ease) infinite alternate;
+  animation: drift4 35s var(--ease) infinite alternate;
 }
 
 .aurora__orb--5 {
   width: 38vw; height: 38vw; min-width: 320px; min-height: 320px;
   bottom: -6%; right: 6%;
   background: radial-gradient(circle at 50% 50%, var(--g5) 0%, var(--g5) 26%, transparent 72%);
-  animation: drift5 45s var(--ease) infinite alternate;
+  animation: drift5 29s var(--ease) infinite alternate;
 }
 
 @keyframes drift1 { from { transform: translate3d(0, 0, 0) scale(1); }
-                    to   { transform: translate3d(9vw, 5vh, 0) scale(1.18); } }
+                    to   { transform: translate3d(15vw, 9vh, 0) scale(1.24); } }
 @keyframes drift2 { from { transform: translate3d(0, 0, 0) scale(1.1); }
-                    to   { transform: translate3d(-8vw, 7vh, 0) scale(0.92); } }
+                    to   { transform: translate3d(-14vw, 12vh, 0) scale(0.86); } }
 @keyframes drift3 { from { transform: translate3d(0, 0, 0) scale(0.95); }
-                    to   { transform: translate3d(-6vw, -6vh, 0) scale(1.15); } }
+                    to   { transform: translate3d(-12vw, -11vh, 0) scale(1.22); } }
 @keyframes drift4 { from { transform: translate3d(0, 0, 0) scale(1.05); }
-                    to   { transform: translate3d(7vw, -8vh, 0) scale(0.9); } }
+                    to   { transform: translate3d(13vw, -13vh, 0) scale(0.84); } }
 @keyframes drift5 { from { transform: translate3d(0, 0, 0) scale(1); }
-                    to   { transform: translate3d(-5vw, -4vh, 0) scale(1.2); } }
+                    to   { transform: translate3d(-11vw, -8vh, 0) scale(1.26); } }
 
 /* Film grain. Large blurred gradients band badly on wide gamut displays;
    a little noise on top hides the steps. Static — it never animates. */
@@ -638,6 +638,18 @@ ul, ol { margin: 0; padding: 0; }
 .pin {
   pointer-events: auto;
   position: absolute;
+  z-index: 3;
+  /* Start state for the scroll reveal; .is-in releases it. */
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  transition-delay: var(--d, 0s);
+}
+
+/* A real button, so the categories can be clicked, tapped and tabbed to. On
+   touch there is no pointer to be near, which made the whole interaction
+   invisible on phones — tapping is the same gesture doing the same job. */
+.pin__btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -651,12 +663,7 @@ ul, ol { margin: 0; padding: 0; }
   font-weight: 500;
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
-  z-index: 3;
-  /* Start state for the scroll reveal; .is-in releases it. */
-  opacity: 0;
-  transform: translateY(10px) scale(0.9);
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
-  transition-delay: var(--d, 0s);
+  cursor: pointer;
 }
 
 .pin.is-in { opacity: 1; transform: none; }
@@ -689,12 +696,15 @@ ul, ol { margin: 0; padding: 0; }
   transform:
     translateY(calc(var(--near, 0) * -7px))
     scale(calc(1 + var(--near, 0) * 0.09));
+  z-index: calc(3 + var(--near, 0) * 3);
+}
+
+.pin.is-in .pin__btn {
   background: color-mix(in srgb, #fff calc(82% + var(--near, 0) * 18%), transparent);
   box-shadow:
     var(--shadow-sm),
     0 calc(var(--near, 0) * 16px) calc(var(--near, 0) * 32px) rgba(14, 13, 11, calc(var(--near, 0) * 0.16)),
     0 0 0 calc(var(--near, 0) * 1.5px) color-mix(in srgb, var(--c, var(--g4)) 45%, transparent);
-  z-index: calc(3 + var(--near, 0) * 3);
 }
 
 .pin.is-in .pin__icon {
@@ -705,7 +715,8 @@ ul, ol { margin: 0; padding: 0; }
 
 /* While the pointer is anywhere in the scene the far markers recede, so the
    ones you are approaching are briefly the only categories on the Bay. */
-.mapscene.is-pointer .pin.is-in {
+.mapscene.is-pointer .pin.is-in,
+.mapscene.has-lock .pin.is-in {
   opacity: calc(0.42 + var(--near, 0) * 0.58);
 }
 
@@ -774,7 +785,10 @@ ul, ol { margin: 0; padding: 0; }
 
 .loop__steps::after {
   height: calc(var(--p, 0) * 100%);
-  background: linear-gradient(to bottom, var(--g1), var(--g4));
+  background: linear-gradient(
+    to bottom,
+    var(--g1), var(--g2) 28%, var(--g3) 52%, var(--g4) 76%, var(--g5)
+  );
 }
 
 .loop__step {
@@ -801,7 +815,9 @@ ul, ol { margin: 0; padding: 0; }
 .loop__step.is-active::before {
   opacity: 1;
   transform: scale(1.5);
-  background: var(--accent);
+  /* The logo gradient, not the standalone coral accent — this dot sits on the
+     brand rail and should be made of the same colours it is travelling down. */
+  background: var(--gradient);
 }
 
 .loop__step h3 {
@@ -1274,7 +1290,7 @@ ul, ol { margin: 0; padding: 0; }
 
   /* Five blurred layers is more compositing than a phone needs for an effect
      this diffuse. Three, blurred less, is visually the same here. */
-  .aurora__orb { filter: blur(42px); opacity: 0.55; }
+  .aurora__orb { filter: blur(42px); opacity: 0.4; }
   .aurora__orb--3,
   .aurora__orb--5 { display: none; }
   .aurora__grain { opacity: 0.22; }
