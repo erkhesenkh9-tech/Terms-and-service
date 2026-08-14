@@ -288,22 +288,22 @@
     </header>
 
     <div class="mapscene" data-reveal>
-      <div class="mapscene__grid" aria-hidden="true"></div>
-
       <div class="mapscene__inner">
-        <span class="pin pin--a" data-pin style="--d: 0.10s" aria-hidden="true"><i class="pin__dot"></i>Music</span>
-        <span class="pin pin--b" data-pin style="--d: 0.22s" aria-hidden="true"><i class="pin__dot"></i>Food</span>
-        <span class="pin pin--c" data-pin style="--d: 0.34s" aria-hidden="true"><i class="pin__dot"></i>Community</span>
-        <span class="pin pin--d" data-pin style="--d: 0.46s" aria-hidden="true"><i class="pin__dot"></i>Art</span>
-        <span class="pin pin--e" data-pin style="--d: 0.58s" aria-hidden="true"><i class="pin__dot"></i>Sports</span>
-        <span class="pin pin--f" data-pin style="--d: 0.70s" aria-hidden="true"><i class="pin__dot"></i>Market</span>
-
-        <img
-          class="phone phone--lg"
-          src="/assets/img/phone-map.webp"
-          width="720" height="1506"
-          loading="lazy" decoding="async"
-          alt="Vezo's map view filtered to public events, showing dozens of event pins clustered across San Francisco and the East Bay." />
+        <!-- Art-directed rather than just scaled: the full-width map is
+             unreadable at phone widths, so narrow screens get a crop that
+             keeps the filters and the dense SF/Oakland cluster. -->
+        <picture>
+          <source
+            media="(max-width: 700px)"
+            srcset="/assets/img/map-narrow.webp"
+            width="570" height="682" />
+          <img
+            class="mapscene__panel"
+            src="/assets/img/map-wide.webp"
+            width="919" height="682"
+            loading="lazy" decoding="async"
+            alt="Vezo's map across the whole Bay Area — event pins clustered thickly over San Francisco and Oakland, thinning out towards Walnut Creek and Hayward, with filters for Now, Today, Weekend and Trending." />
+        </picture>
       </div>
     </div>
   </div>

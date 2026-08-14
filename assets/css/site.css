@@ -529,85 +529,48 @@ ul, ol { margin: 0; padding: 0; }
 }
 
 /* --- Section 2: the map scene --------------------------------------------- */
+/* No border, no panel background. The bordered box made sense when a phone
+   floated inside an empty "map canvas"; with a real map filling the slot it
+   became a frame around a frame. What is left is a soft pool of brand light
+   under the map so it lifts off the page. */
 .mapscene {
   position: relative;
-  border-radius: var(--r-xl);
-  background:
-    radial-gradient(120% 100% at 50% 0%, rgba(113, 141, 233, 0.16), transparent 62%),
-    var(--bg-warm);
-  border: 1px solid var(--line-soft);
-  padding: clamp(36px, 6vw, 72px) clamp(20px, 4vw, 56px) 0;
-  overflow: hidden;
+  isolation: isolate;
+  padding-block: clamp(8px, 1.5vw, 20px);
 }
 
-.mapscene__grid {
+.mapscene::before {
+  content: '';
   position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--line-soft) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(80% 70% at 50% 45%, #000 40%, transparent 100%);
-  -webkit-mask-image: radial-gradient(80% 70% at 50% 45%, #000 40%, transparent 100%);
-  pointer-events: none;
+  inset: 12% 4% 4%;
+  background: var(--gradient);
+  filter: blur(70px);
+  opacity: 0.26;
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .mapscene__inner {
   position: relative;
   display: flex;
   justify-content: center;
-  min-height: clamp(360px, 46vw, 560px);
+  align-items: center;
 }
 
-.mapscene .phone {
-  align-self: flex-end;
-  /* Runs off the bottom edge of the scene on purpose — the device reads as
-     rising out of the map rather than pasted onto it. */
-  margin-bottom: calc(-1 * clamp(60px, 9vw, 130px));
+/* The map itself, no device frame — at this width a phone bezel would shrink
+   the thing the section is about. Capped at the source's own 919px so it is
+   never upscaled: this capture is not high-resolution, and stretching it
+   would read as soft next to the crisp device renders elsewhere. */
+.mapscene__panel {
   position: relative;
   z-index: 2;
+  width: 100%;
+  max-width: 919px;
+  border-radius: clamp(16px, 2vw, 26px);
+  box-shadow:
+    0 2px 8px rgba(14, 13, 11, 0.06),
+    0 24px 60px rgba(14, 13, 11, 0.16);
 }
-
-.pin {
-  position: absolute;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 15px 9px 11px;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--line-soft);
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  box-shadow: var(--shadow-sm);
-  z-index: 3;
-  /* Start state for the scroll reveal; .is-in releases it. */
-  opacity: 0;
-  transform: translateY(10px) scale(0.9);
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
-  transition-delay: var(--d, 0s);
-}
-
-.pin.is-in { opacity: 1; transform: none; }
-
-.pin__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--c, var(--g4));
-  flex: none;
-  box-shadow: 0 0 0 4px rgba(113, 141, 233, 0.18);
-}
-
-.pin--a { left: 4%; top: 12%; --c: var(--g1); }
-.pin--b { right: 6%; top: 7%; --c: var(--g4); }
-.pin--c { left: 1%; top: 46%; --c: var(--g2); }
-.pin--d { right: 2%; top: 38%; --c: var(--g5); }
-.pin--e { left: 8%; top: 74%; --c: var(--g3); }
-.pin--f { right: 9%; top: 68%; --c: var(--g1); }
 
 /* --- Centred section header ----------------------------------------------- */
 .center-head {
@@ -975,8 +938,7 @@ ul, ol { margin: 0; padding: 0; }
 
 /* Without JS nothing would ever get `.is-in`, so the page must not depend on
    it for legibility. */
-.no-js [data-reveal],
-.no-js .pin { opacity: 1; transform: none; }
+.no-js [data-reveal] { opacity: 1; transform: none; }
 
 /* --- Responsive ----------------------------------------------------------- */
 @media (max-width: 900px) {
@@ -1045,17 +1007,6 @@ ul, ol { margin: 0; padding: 0; }
   .aurora__grain { opacity: 0.22; }
 
   .duo .phone { filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.5)); }
-  .mapscene { padding-inline: 16px; border-radius: var(--r-lg); }
-  .mapscene__inner { min-height: 400px; }
-  /* Six floating pins is noise at this width — keep the four that frame the
-     device and drop the pair that would collide with it. */
-  .pin { font-size: 13px; padding: 7px 12px 7px 9px; }
-  .pin--c,
-  .pin--d { display: none; }
-  .pin--a { left: 0; top: 4%; }
-  .pin--b { right: 0; top: 14%; }
-  .pin--e { left: 0; top: 62%; }
-  .pin--f { right: 0; top: 72%; }
   .phone,
   .phone--lg { width: min(250px, 62vw); }
   .loop__step { padding-left: 40px; }
@@ -1086,8 +1037,7 @@ ul, ol { margin: 0; padding: 0; }
   }
 
   /* Reveals must not strand content invisible once their transition is gone. */
-  [data-reveal],
-  .pin {
+  [data-reveal] {
     opacity: 1 !important;
     transform: none !important;
   }
