@@ -373,7 +373,7 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: 50%;
   filter: blur(58px);
   mix-blend-mode: multiply;
-  opacity: 0.66;
+  opacity: 0.74;
   will-change: transform;
 }
 
@@ -387,35 +387,35 @@ ul, ol { margin: 0; padding: 0; }
 
 .aurora__orb--1 {
   width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
-  top: 40%; left: 12%;
+  top: 44%; left: -2%;
   background: radial-gradient(circle at 50% 50%, var(--g1) 0%, var(--g1) 30%, transparent 72%);
   animation: drift1 42s var(--ease) infinite alternate;
 }
 
 .aurora__orb--2 {
   width: 30vw; height: 30vw; min-width: 270px; min-height: 270px;
-  top: 36%; right: 10%;
+  top: 40%; right: -4%;
   background: radial-gradient(circle at 50% 50%, var(--g4) 0%, var(--g4) 28%, transparent 72%);
   animation: drift2 48s var(--ease) infinite alternate;
 }
 
 .aurora__orb--3 {
   width: 38vw; height: 38vw; min-width: 330px; min-height: 330px;
-  top: 54%; left: 30%;
+  top: 62%; left: 26%;
   background: radial-gradient(circle at 50% 50%, var(--g3) 0%, var(--g3) 26%, transparent 70%);
   animation: drift3 38s var(--ease) infinite alternate;
 }
 
 .aurora__orb--4 {
   width: 34vw; height: 34vw; min-width: 300px; min-height: 300px;
-  bottom: 2%; left: 20%;
+  bottom: -2%; left: 8%;
   background: radial-gradient(circle at 50% 50%, var(--g2) 0%, var(--g2) 30%, transparent 72%);
   animation: drift4 52s var(--ease) infinite alternate;
 }
 
 .aurora__orb--5 {
   width: 38vw; height: 38vw; min-width: 320px; min-height: 320px;
-  bottom: -4%; right: 18%;
+  bottom: -6%; right: 6%;
   background: radial-gradient(circle at 50% 50%, var(--g5) 0%, var(--g5) 26%, transparent 72%);
   animation: drift5 45s var(--ease) infinite alternate;
 }
@@ -484,15 +484,22 @@ ul, ol { margin: 0; padding: 0; }
   margin-top: clamp(44px, 6vw, 76px);
   display: flex;
   justify-content: center;
-  /* The device is deliberately allowed to run past the fold; the section that
-     follows is what cuts it off, which is why .hero has no bottom padding. */
-  height: clamp(400px, 52vw, 640px);
-  overflow: hidden;
+  /* The map is shown whole rather than bleeding off the fold: its bottom edge
+     is the app's tab bar, and slicing through that reads as a mistake in a way
+     a cropped phone body never did. */
+  padding-bottom: clamp(56px, 8vw, 104px);
 }
 
-.hero__phone {
-  width: clamp(240px, 32vw, 340px);
-  filter: drop-shadow(0 30px 70px rgba(14, 13, 11, 0.22));
+/* No device frame — at this width a bezel would shrink the thing the hero is
+   about, and the map already reads as a screen. Capped at the source's own
+   919px so it is never upscaled. */
+.hero__map {
+  width: 100%;
+  max-width: 919px;
+  border-radius: clamp(16px, 2vw, 28px);
+  box-shadow:
+    0 2px 8px rgba(14, 13, 11, 0.06),
+    0 30px 70px rgba(14, 13, 11, 0.20);
   will-change: transform;
 }
 
@@ -529,48 +536,85 @@ ul, ol { margin: 0; padding: 0; }
 }
 
 /* --- Section 2: the map scene --------------------------------------------- */
-/* No border, no panel background. The bordered box made sense when a phone
-   floated inside an empty "map canvas"; with a real map filling the slot it
-   became a frame around a frame. What is left is a soft pool of brand light
-   under the map so it lifts off the page. */
 .mapscene {
   position: relative;
-  isolation: isolate;
-  padding-block: clamp(8px, 1.5vw, 20px);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(113, 141, 233, 0.16), transparent 62%),
+    var(--bg-warm);
+  border: 1px solid var(--line-soft);
+  padding: clamp(36px, 6vw, 72px) clamp(20px, 4vw, 56px) 0;
+  overflow: hidden;
 }
 
-.mapscene::before {
-  content: '';
+.mapscene__grid {
   position: absolute;
-  inset: 12% 4% 4%;
-  background: var(--gradient);
-  filter: blur(70px);
-  opacity: 0.26;
-  border-radius: 50%;
-  z-index: -1;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(80% 70% at 50% 45%, #000 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(80% 70% at 50% 45%, #000 40%, transparent 100%);
+  pointer-events: none;
 }
 
 .mapscene__inner {
   position: relative;
   display: flex;
   justify-content: center;
-  align-items: center;
+  min-height: clamp(360px, 46vw, 560px);
 }
 
-/* The map itself, no device frame — at this width a phone bezel would shrink
-   the thing the section is about. Capped at the source's own 919px so it is
-   never upscaled: this capture is not high-resolution, and stretching it
-   would read as soft next to the crisp device renders elsewhere. */
-.mapscene__panel {
+.mapscene .phone {
+  align-self: flex-end;
+  /* Runs off the bottom edge of the scene on purpose — the device reads as
+     rising out of the map rather than pasted onto it. */
+  margin-bottom: calc(-1 * clamp(60px, 9vw, 130px));
   position: relative;
   z-index: 2;
-  width: 100%;
-  max-width: 919px;
-  border-radius: clamp(16px, 2vw, 26px);
-  box-shadow:
-    0 2px 8px rgba(14, 13, 11, 0.06),
-    0 24px 60px rgba(14, 13, 11, 0.16);
 }
+
+.pin {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px 9px 11px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  z-index: 3;
+  /* Start state for the scroll reveal; .is-in releases it. */
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  transition-delay: var(--d, 0s);
+}
+
+.pin.is-in { opacity: 1; transform: none; }
+
+.pin__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c, var(--g4));
+  flex: none;
+  box-shadow: 0 0 0 4px rgba(113, 141, 233, 0.18);
+}
+
+.pin--a { left: 4%; top: 12%; --c: var(--g1); }
+.pin--b { right: 6%; top: 7%; --c: var(--g4); }
+.pin--c { left: 1%; top: 46%; --c: var(--g2); }
+.pin--d { right: 2%; top: 38%; --c: var(--g5); }
+.pin--e { left: 8%; top: 74%; --c: var(--g3); }
+.pin--f { right: 9%; top: 68%; --c: var(--g1); }
 
 /* --- Centred section header ----------------------------------------------- */
 .center-head {
@@ -938,7 +982,8 @@ ul, ol { margin: 0; padding: 0; }
 
 /* Without JS nothing would ever get `.is-in`, so the page must not depend on
    it for legibility. */
-.no-js [data-reveal] { opacity: 1; transform: none; }
+.no-js [data-reveal],
+.no-js .pin { opacity: 1; transform: none; }
 
 /* --- Responsive ----------------------------------------------------------- */
 @media (max-width: 900px) {
@@ -996,8 +1041,7 @@ ul, ol { margin: 0; padding: 0; }
 
   .nav-panel .btn { width: 100%; margin-top: 20px; }
 
-  .hero__stage { height: clamp(340px, 84vw, 460px); }
-  .hero__phone { width: min(255px, 62vw); }
+  .hero__stage { padding-bottom: clamp(40px, 9vw, 64px); }
 
   /* Five blurred layers is more compositing than a phone needs for an effect
      this diffuse. Three, blurred less, is visually the same here. */
@@ -1007,6 +1051,17 @@ ul, ol { margin: 0; padding: 0; }
   .aurora__grain { opacity: 0.22; }
 
   .duo .phone { filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.5)); }
+  .mapscene { padding-inline: 16px; border-radius: var(--r-lg); }
+  .mapscene__inner { min-height: 400px; }
+  /* Six floating pins is noise at this width — keep the four that frame the
+     device and drop the pair that would collide with it. */
+  .pin { font-size: 13px; padding: 7px 12px 7px 9px; }
+  .pin--c,
+  .pin--d { display: none; }
+  .pin--a { left: 0; top: 4%; }
+  .pin--b { right: 0; top: 14%; }
+  .pin--e { left: 0; top: 62%; }
+  .pin--f { right: 0; top: 72%; }
   .phone,
   .phone--lg { width: min(250px, 62vw); }
   .loop__step { padding-left: 40px; }
@@ -1037,12 +1092,13 @@ ul, ol { margin: 0; padding: 0; }
   }
 
   /* Reveals must not strand content invisible once their transition is gone. */
-  [data-reveal] {
+  [data-reveal],
+  .pin {
     opacity: 1 !important;
     transform: none !important;
   }
 
   .memory__card--live { transform: rotate(-3deg) !important; opacity: 1 !important; }
   .memory__card--saved { transform: translateY(30px) rotate(3deg) !important; }
-  .hero__phone { transform: none !important; }
+  .hero__map { transform: none !important; }
 }

@@ -62,10 +62,10 @@
   }
 
   /* --- Reveal on entry ----------------------------------------------------
-     One observer for everything that fades up, including the memory cards.
-     Elements are unobserved once shown so nothing re-animates on the way back
-     up. */
-  var revealables = document.querySelectorAll('[data-reveal], [data-memory]');
+     One observer for everything that fades up, including the map pins and the
+     memory cards. Elements are unobserved once shown so nothing re-animates
+     on the way back up. */
+  var revealables = document.querySelectorAll('[data-reveal], [data-pin], [data-memory]');
 
   if (!('IntersectionObserver' in window)) {
     // Old browser: show everything rather than leaving the page blank.
